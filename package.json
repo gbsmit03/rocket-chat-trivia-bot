@@ -1,0 +1,33 @@
+{
+  "name": "rocket-chat-trivia-bot",
+  "version": "0.0.1",
+  "description": "Rocket chat trivia bot",
+  "main": "app.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gbsmit03/rocket-chat-trivia-bot.git"
+  },
+  "keywords": [
+    "rocket-chat",
+    "rocket",
+    "chat",
+    "bot",
+    "trivia"
+  ],
+  "author": "Ben Smith",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/gbsmit03/rocket-chat-trivia-bot/issues"
+  },
+  "homepage": "https://github.com/gbsmit03/rocket-chat-trivia-bot#readme",
+  "dependencies": {
+    "ddp": "^0.12.1",
+    "node-taffydb": "^0.2.0",
+    "rest": "^2.0.0",
+    "taffy": "^2.6.2",
+    "tingodb": "^0.4.2"
+  }
+}
