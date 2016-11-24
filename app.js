@@ -1,14 +1,17 @@
-"use strict";
+'use strict';
 
 var DDPClient = require('ddp'),
     Db = require('tingodb')().Db,
     rest = require('rest'),
     mime = require('rest/interceptor/mime'),
     errorCode = require('rest/interceptor/errorCode'),
-    rctConfig = require('./config.js');
+    rctConfig = require('./config.js'),
+    Bot = require("./bot.js");
+    
 
 var client = rest.wrap(mime)
              .wrap(errorCode, { code: 500 });
+var bot;
 
 var METHODS = {
     LOGIN: 'login',
@@ -43,6 +46,7 @@ ddpclient.connect(function (error, wasReconnect) {
     // a server connection is re-established
     if (error) {
         console.log("DDP connection error!");
+        console.log('Error connecting to host ' + rctConfig.DDP_CONFIG.host + ' port ' + rctConfig.DDP_CONFIG.port);
         return;
     }
 
@@ -66,19 +70,22 @@ ddpclient.connect(function (error, wasReconnect) {
                     function (err, result) {
                         if (!err) {
                             if (result.channels.length) {
+                                var _rid = result.channels[0]._id;
                                 BOT_SESSION.rid = result.channels[0]._id;
                                 var roomSubId = ddpclient.subscribe(
                                     'stream-room-messages',
                                     [BOT_SESSION.rid, false],
                                     function () {
-                                        console.log(' in room ' + rctConfig.TRIVIA_BOT_CONFIG.CHATROOM + '(' + BOT_SESSION.rid + ')');
-                                        chatMessage('Trivia Bot Activated');
-                                        RCT_COMMANDS.help();
+                                        console.log(' in room ' + rctConfig.TRIVIA_BOT_CONFIG.CHATROOM + '(' + _rid + ')');
+                                        //chatMessage('Trivia Bot Activated');
+                                        bot = new Bot(ddpclient, _rid);
+                                        bot.startBot();
+                                       // RCT_COMMANDS.help();
                                     }
                                 );
                             }
                         } else {
-                            console.log('error', error);
+                            console.log('error searching channel', err);
                         }
                     }
                 );
@@ -86,11 +93,11 @@ ddpclient.connect(function (error, wasReconnect) {
         );
     }, 3000);
 
-    var getRandomIntInclusive = function getRandomIntInclusive(min, max) {
-        min = Math.ceil(min);
-        max = Math.floor(max);
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
+    // var getRandomIntInclusive = function getRandomIntInclusive(min, max) {
+    //     min = Math.ceil(min);
+    //     max = Math.floor(max);
+    //     return Math.floor(Math.random() * (max - min + 1)) + min;
+    // }
 
     var doRandomAnswers = function doRandomAnswers(question) {
         var randomList = [],
@@ -261,26 +268,26 @@ ddpclient.connect(function (error, wasReconnect) {
     };
 
     ddpclient.on('message', function (ddpMsgStr) {
-        var ddpMsg = JSON.parse(ddpMsgStr);
-        //TODO ingore msgs from bot
-        if (ddpMsg.msg === 'changed' && ddpMsg.collection === 'stream-room-messages' && ddpMsg.fields.args[0].rid === BOT_SESSION.rid && typeof ddpMsg.fields.args[0].editedAt === 'undefined') {
-            var message = ddpMsg.fields.args[0];
-            if (message.msg.substring(0, 3) === 'rct') {
-                var command = message.msg.substring(4).toLowerCase().trim();
-                if (typeof RCT_COMMANDS[command] !== 'undefined') {
-                    RCT_COMMANDS[command](message.u);
-                } else {
-                    //TODO print warning message and help?
-                    chatMessage(message.u.username + '`'+message.msg+'` is an invalid command. Please type `rct help` for help');
-                }
-            } else if (BOT_SESSION.acceptingAnswers) {
-                var currentUser = message.u;
-                if (BOT_SESSION.currentPlayers[currentUser._id]) {
-                    BOT_SESSION.currentAnswers[currentUser._id] = parseInt(message.msg.substring(0, 1));
-                }
-            }
-        }
-        //   console.log("ddp message: " + ddpMsgStr);
+        // var ddpMsg = JSON.parse(ddpMsgStr);
+        // //TODO ingore msgs from bot
+        // if (ddpMsg.msg === 'changed' && ddpMsg.collection === 'stream-room-messages' && ddpMsg.fields.args[0].rid === BOT_SESSION.rid && typeof ddpMsg.fields.args[0].editedAt === 'undefined') {
+        //     var message = ddpMsg.fields.args[0];
+        //     if (message.msg.substring(0, 3) === 'rct') {
+        //         var command = message.msg.substring(4).toLowerCase().trim();
+        //         if (typeof RCT_COMMANDS[command] !== 'undefined') {
+        //             RCT_COMMANDS[command](message.u);
+        //         } else {
+        //             //TODO print warning message and help?
+        //             chatMessage(message.u.username + '`'+message.msg+'` is an invalid command. Please type `rct help` for help');
+        //         }
+        //     } else if (BOT_SESSION.acceptingAnswers) {
+        //         var currentUser = message.u;
+        //         if (BOT_SESSION.currentPlayers[currentUser._id]) {
+        //             BOT_SESSION.currentAnswers[currentUser._id] = parseInt(message.msg.substring(0, 1));
+        //         }
+        //     }
+        // }
+        // //   console.log("ddp message: " + ddpMsgStr);
     });
 
 
